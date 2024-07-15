@@ -4,7 +4,7 @@ import time
 import random
 
 # URL base de la API
-BASE_URL = 'https://murmuring-gorge-54693-5163040c3e89.herokuapp.com/api/v1'
+BASE_URL = 'http://127.0.0.1:5000/api/v1'
 
 # Función para crear una compañía
 def create_company(company_name):
