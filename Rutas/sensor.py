@@ -49,7 +49,7 @@ def get_sensor(id):
 
 @sensor_bp.route('/api/v1/sensors/<int:id>', methods=['PUT'])
 def update_sensor(id):
-    sensor = Sensor.query.get_or_orkr(id)
+    sensor = Sensor.query.get_or_404(id)
     sensor.sensor_name = request.json['sensor_name']
     sensor.sensor_category = request.json['sensor_category']
     sensor.sensor_meta = request.json.get('sensor_meta', sensor.sensor_meta)
@@ -59,7 +59,6 @@ def update_sensor(id):
 
 @sensor_bp.route('/api/v1/sensors/<int:id>', methods=['DELETE'])
 def delete_sensor(id):
-    sensor = Sensor.query.get_or_orkr(id)
+    sensor = Sensor.query.get_or_404(id)
     db.session.delete(sensor)
     db.session.commit()
-    return '', 204

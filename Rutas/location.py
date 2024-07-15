@@ -49,7 +49,7 @@ def get_location(id):
 
 @location_bp.route('/api/v1/locations/<int:id>', methods=['PUT'])
 def update_location(id):
-    location = Location.query.get_or_orkr(id)
+    location = Location.query.get_or_404(id)
     location.location_name = request.json['location_name']
     location.location_country = request.json['location_country']
     location.location_city = request.json['location_city']
@@ -60,7 +60,7 @@ def update_location(id):
 
 @location_bp.route('/api/v1/locations/<int:id>', methods=['DELETE'])
 def delete_location(id):
-    location = Location.query.get_or_orkr(id)
+    location = Location.query.get_or_404(id)
     db.session.delete(location)
     db.session.commit()
     return '', 204
