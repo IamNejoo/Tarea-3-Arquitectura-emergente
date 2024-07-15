@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from models import db, Sensor, Location, Company
+from models import db, Sensor, Company
 from schemas import SensorSchema
 import uuid
 
@@ -16,6 +16,14 @@ def validate_company_api_key(api_key):
         return jsonify({'error': 'Invalid API key'}), 401
 
     return company
+
+@sensor_bp.before_request
+def before_request():
+    if request.method != 'POST' or request.endpoint != 'sensor_bp.create_sensor':
+        api_key = request.args.get('company_api_key') or request.headers.get('Authorization')
+        validation_response = validate_company_api_key(api_key)
+        if isinstance(validation_response, tuple):  # Si la validación falla, se devuelve el error
+            return validation_response
 
 @sensor_bp.route('/api/v1/sensors', methods=['POST'])
 def create_sensor():
@@ -42,23 +50,20 @@ def get_sensors():
     result = sensors_schema.dump(all_sensors)
     return jsonify(result)
 
-@sensor_bp.route('/api/v1/sensors/<int:id>', methods=['GET'])
-def get_sensor(id):
-    sensor = Sensor.query.get_or_orkr(id)
-    return sensor_schema.jsonify(sensor)
-
-@sensor_bp.route('/api/v1/sensors/<int:id>', methods=['PUT'])
-def update_sensor(id):
-    sensor = Sensor.query.get_or_404(id)
-    sensor.sensor_name = request.json['sensor_name']
-    sensor.sensor_category = request.json['sensor_category']
-    sensor.sensor_meta = request.json.get('sensor_meta', sensor.sensor_meta)
-
-    db.session.commit()
-    return sensor_schema.jsonify(sensor)
-
-@sensor_bp.route('/api/v1/sensors/<int:id>', methods=['DELETE'])
-def delete_sensor(id):
-    sensor = Sensor.query.get_or_404(id)
-    db.session.delete(sensor)
-    db.session.commit()
+@sensor_bp.route('/api/v1/sensors/<int:id>', methods=['GET', 'PUT', 'DELETE'])
+def manage_sensor(id):
+    if request.method == 'GET':
+        sensor = Sensor.query.get_or_404(id)
+        return sensor_schema.jsonify(sensor)
+    elif request.method == 'PUT':
+        sensor = Sensor.query.get_or_404(id)
+        sensor.sensor_name = request.json['sensor_name']
+        sensor.sensor_category = request.json['sensor_category']
+        sensor.sensor_meta = request.json.get('sensor_meta', sensor.sensor_meta)
+        db.session.commit()
+        return sensor_schema.jsonify(sensor)
+    elif request.method == 'DELETE':
+        sensor = Sensor.query.get_or_404(id)
+        db.session.delete(sensor)
+        db.session.commit()
+        return '', 204

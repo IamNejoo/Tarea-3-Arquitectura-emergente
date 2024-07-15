@@ -16,10 +16,17 @@ def validate_company_api_key(api_key):
 
     return company
 
+@location_bp.before_request
+def before_request():
+    if request.method != 'POST' or request.endpoint != 'location_bp.create_location':
+        api_key = request.args.get('company_api_key') or request.headers.get('Authorization')
+        validation_response = validate_company_api_key(api_key)
+        if isinstance(validation_response, tuple):  # Si la validación falla, se devuelve el error
+            return validation_response
+
 @location_bp.route('/api/v1/locations', methods=['POST'])
 def create_location():
     data = request.json
-    print('Request data:', data)  # Añadir este log para depuración
     api_key = data.get('company_api_key')
     company = validate_company_api_key(api_key)
     if isinstance(company, tuple):  # Si la validación falla, se devuelve el error
@@ -42,25 +49,21 @@ def get_locations():
     result = locations_schema.dump(all_locations)
     return jsonify(result)
 
-@location_bp.route('/api/v1/locations/<int:id>', methods=['GET'])
-def get_location(id):
-    location = Location.query.get_or_404(id)
-    return location_schema.jsonify(location)
-
-@location_bp.route('/api/v1/locations/<int:id>', methods=['PUT'])
-def update_location(id):
-    location = Location.query.get_or_404(id)
-    location.location_name = request.json['location_name']
-    location.location_country = request.json['location_country']
-    location.location_city = request.json['location_city']
-    location.location_meta = request.json.get('location_meta', location.location_meta)
-
-    db.session.commit()
-    return location_schema.jsonify(location)
-
-@location_bp.route('/api/v1/locations/<int:id>', methods=['DELETE'])
-def delete_location(id):
-    location = Location.query.get_or_404(id)
-    db.session.delete(location)
-    db.session.commit()
-    return '', 204
+@location_bp.route('/api/v1/locations/<int:id>', methods=['GET', 'PUT', 'DELETE'])
+def manage_location(id):
+    if request.method == 'GET':
+        location = Location.query.get_or_404(id)
+        return location_schema.jsonify(location)
+    elif request.method == 'PUT':
+        location = Location.query.get_or_404(id)
+        location.location_name = request.json['location_name']
+        location.location_country = request.json['location_country']
+        location.location_city = request.json['location_city']
+        location.location_meta = request.json.get('location_meta', location.location_meta)
+        db.session.commit()
+        return location_schema.jsonify(location)
+    elif request.method == 'DELETE':
+        location = Location.query.get_or_404(id)
+        db.session.delete(location)
+        db.session.commit()
+        return '', 204
