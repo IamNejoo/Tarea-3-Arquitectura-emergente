@@ -3,3 +3,4 @@ Flask-SQLAlchemy
 Flask-Marshmallow
 marshmallow-sqlalchemy
 Flask-Bcrypt
+gunicorn==20.0.4
