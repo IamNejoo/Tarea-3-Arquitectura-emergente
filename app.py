@@ -25,6 +25,8 @@ def create_app():
 
     return app
 
+# Asegúrate de que la instancia de la aplicación esté disponible para Gunicorn
+application = create_app()
+
 if __name__ == '__main__':
-    app = create_app()
-    app.run(debug=True)
+    application.run(debug=True)
