@@ -1,5 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
+import uuid
 
 db = SQLAlchemy()
 bcrypt = Bcrypt()
@@ -16,7 +17,8 @@ class Admin(db.Model):
 class Company(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     company_name = db.Column(db.String(150), unique=True, nullable=False)
-    company_api_key = db.Column(db.String(150), unique=True, nullable=False)
+    company_api_key = db.Column(db.String(150), unique=True, nullable=False, default=str(uuid.uuid4()))
+    locations = db.relationship('Location', backref='company', lazy=True)
 
 class Location(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -25,6 +27,7 @@ class Location(db.Model):
     location_country = db.Column(db.String(150), nullable=False)
     location_city = db.Column(db.String(150), nullable=False)
     location_meta = db.Column(db.String(150), nullable=True)
+    sensors = db.relationship('Sensor', backref='location', lazy=True)
 
 class Sensor(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -32,7 +35,8 @@ class Sensor(db.Model):
     sensor_name = db.Column(db.String(150), nullable=False)
     sensor_category = db.Column(db.String(150), nullable=False)
     sensor_meta = db.Column(db.String(150), nullable=True)
-    sensor_api_key = db.Column(db.String(150), unique=True, nullable=False)
+    sensor_api_key = db.Column(db.String(150), unique=True, nullable=False, default=str(uuid.uuid4()))
+    sensor_data = db.relationship('SensorData', backref='sensor', lazy=True)
 
 class SensorData(db.Model):
     id = db.Column(db.Integer, primary_key=True)
