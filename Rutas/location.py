@@ -16,14 +16,6 @@ def validate_company_api_key(api_key):
 
     return company
 
-@location_bp.before_request
-def before_request():
-    if request.method != 'POST' or request.endpoint != 'location_bp.create_location':
-        api_key = request.args.get('company_api_key') or request.headers.get('Authorization')
-        validation_response = validate_company_api_key(api_key)
-        if isinstance(validation_response, tuple):  # Si la validación falla, se devuelve el error
-            return validation_response
-
 @location_bp.route('/api/v1/locations', methods=['POST'])
 def create_location():
     data = request.json
@@ -45,25 +37,50 @@ def create_location():
 
 @location_bp.route('/api/v1/locations', methods=['GET'])
 def get_locations():
-    all_locations = Location.query.all()
+    api_key = request.args.get('company_api_key')
+    company = validate_company_api_key(api_key)
+    if isinstance(company, tuple):  # Si la validación falla, se devuelve el error
+        return company
+
+    all_locations = Location.query.filter_by(company_id=company.id).all()
     result = locations_schema.dump(all_locations)
     return jsonify(result)
 
-@location_bp.route('/api/v1/locations/<int:id>', methods=['GET', 'PUT', 'DELETE'])
-def manage_location(id):
-    if request.method == 'GET':
-        location = Location.query.get_or_404(id)
-        return location_schema.jsonify(location)
-    elif request.method == 'PUT':
-        location = Location.query.get_or_404(id)
-        location.location_name = request.json['location_name']
-        location.location_country = request.json['location_country']
-        location.location_city = request.json['location_city']
-        location.location_meta = request.json.get('location_meta', location.location_meta)
-        db.session.commit()
-        return location_schema.jsonify(location)
-    elif request.method == 'DELETE':
-        location = Location.query.get_or_404(id)
-        db.session.delete(location)
-        db.session.commit()
-        return '', 204
+@location_bp.route('/api/v1/locations/<int:id>', methods=['GET'])
+def get_location(id):
+    api_key = request.args.get('company_api_key')
+    company = validate_company_api_key(api_key)
+    if isinstance(company, tuple):  # Si la validación falla, se devuelve el error
+        return company
+
+    location = Location.query.filter_by(id=id, company_id=company.id).first_or_404()
+    return location_schema.jsonify(location)
+
+@location_bp.route('/api/v1/locations/<int:id>', methods=['PUT'])
+def update_location(id):
+    data = request.json
+    api_key = data.get('company_api_key')
+    company = validate_company_api_key(api_key)
+    if isinstance(company, tuple):  # Si la validación falla, se devuelve el error
+        return company
+
+    location = Location.query.filter_by(id=id, company_id=company.id).first_or_404()
+    location.location_name = data.get('location_name', location.location_name)
+    location.location_country = data.get('location_country', location.location_country)
+    location.location_city = data.get('location_city', location.location_city)
+    location.location_meta = data.get('location_meta', location.location_meta)
+
+    db.session.commit()
+    return location_schema.jsonify(location)
+
+@location_bp.route('/api/v1/locations/<int:id>', methods=['DELETE'])
+def delete_location(id):
+    api_key = request.json.get('company_api_key')
+    company = validate_company_api_key(api_key)
+    if isinstance(company, tuple):  # Si la validación falla, se devuelve el error
+        return company
+
+    location = Location.query.filter_by(id=id, company_id=company.id).first_or_404()
+    db.session.delete(location)
+    db.session.commit()
+    return '', 204
