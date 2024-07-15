@@ -18,10 +18,16 @@ def create_app():
     with app.app_context():
         db.create_all()
 
+    # Registrar blueprints
     app.register_blueprint(company_bp)
     app.register_blueprint(location_bp)
     app.register_blueprint(sensor_bp)
     app.register_blueprint(sensor_data_bp)
+
+    # Añadir una ruta para la raíz
+    @app.route('/')
+    def index():
+        return 'Hello, this is the root of the IoT API.'
 
     return app
 
